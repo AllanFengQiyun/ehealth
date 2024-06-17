@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "/Users/qiyunfeng/ehealth",
+        "app_url": "https://o8lgib-qiyun-feng.shinyapps.io/ehealth/",
+        "app_id": 12187661,
+        "app_guid": null,
+        "title": "ehealth",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}
