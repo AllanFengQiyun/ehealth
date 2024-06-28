@@ -7,7 +7,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-shiny = "^0.10.2"
 shiny-validate = "^0.1.1"
 streamlit = "^1.35.0"
 scikit-learn = "^1.5.0"
