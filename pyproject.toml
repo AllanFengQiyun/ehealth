@@ -9,8 +9,6 @@ readme = "README.md"
 python = "^3.11"
 fastapi = "^0.111.0"
 pandas = "^2.2.2"
-lifelines = "^0.29.0"
-Faker = "^26.0.0"
 
 
 [build-system]
