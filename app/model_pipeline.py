@@ -1,5 +1,6 @@
 #!pip install imbalanced-learn
 import datetime as dt
+from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import faker 
 import numpy as np
@@ -12,29 +13,7 @@ import matplotlib as plt
 import seaborn as sns
 from lifelines import KaplanMeierFitter
 
-# import tensorflow as tf
-
-# Number of trees in random forest
-n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
-# Number of features to consider at every split
-max_features = ["auto", "sqrt", "log2"]
-# Maximum number of levels in tree
-max_depth = [int(x) for x in np.linspace(10, 1000, 10)]
-# Minimum number of samples required to split a node
-min_samples_split = [2, 5, 10, 14]
-# Minimum number of samples required at each leaf node
-min_samples_leaf = [1, 2, 4, 6, 8]
-# Create the random grid
-random_grid = {
-    "n_estimators": n_estimators,
-    "max_features": max_features,
-    "max_depth": max_depth,
-    "min_samples_split": min_samples_split,
-    "min_samples_leaf": min_samples_leaf,
-    "criterion": ["entropy", "gini"],
-}
-
-faker = fk.Faker(["en_CA"])
+faker = faker.Faker(["en_CA"])
 warnings.filterwarnings("ignore")
 
 education: List[str] = ["Highschool", "College", "University", "Post-grad"]
@@ -374,6 +353,7 @@ def labeling_patients(df: pd.DataFrame) -> bool:
 
     return faker.boolean(chance_of_getting_true=percentage_chance * factors)
 
+patient_df['label'] = patient_df.apply(labeling_patients,axis=1)
 patient_df['dob'] = pd.to_datetime(patient_df['dob'])
 today = datetime.today()
 
@@ -394,6 +374,8 @@ strong_inc_like = [
     "obesity", "poor_controlled_type2_diabetes", "stroke",
     "family_history_of_dementia", "traumatic_brain_injury"
 ]
+patient_df['event'] = patient_df['label'].astype(int)
+
 
 def generate_diagnosis_date(row):
     date_of_birth = row['dob']
@@ -424,21 +406,17 @@ def generate_diagnosis_date(row):
 # Apply the function to generate 'time_to_event'
 patient_df['time_to_event'] = patient_df.apply(generate_diagnosis_date, axis=1)
 
-df_cox = patient_df.drop(columns=['name', 'dob', 'label','label_int','combined_label','geographic_location'])
+df_cox = patient_df.drop(columns=['name', 'dob', 'label','geographic_location'])
+
 df_cox.head()
 
 # Kaplan-Meier Analysis
 kmf = KaplanMeierFitter()
 
-# Plotting Kaplan-Meier curves for Alzheimer's vs. no Alzheimer's
-plt.figure(figsize=(12, 8))
-
 # Alzheimer's group
 kmf.fit(durations=df_cox['time_to_event'][df_cox['event'] == 1], event_observed=df_cox['event'][df_cox['event'] == 1], label='Alzheimer\'s')
-ax = kmf.plot_survival_function()
 
 # Non-Alzheimer's group
 kmf.fit(durations=df_cox['time_to_event'][df_cox['event'] == 0], event_observed=df_cox['event'][df_cox['event'] == 0], label='Not Alzheimer\'s')
-kmf.plot_survival_function(ax=ax)
 
-pickle.dump(rf_model, open("model.pkl", "wb"))
+pickle.dump(kmf, open("model.pkl", "wb"))
