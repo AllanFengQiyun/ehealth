@@ -11,7 +11,7 @@ import warnings
 import pickle
 import matplotlib as plt
 import seaborn as sns
-from lifelines import KaplanMeierFitter
+from lifelines import KaplanMeierFitter, CoxPHFitter
 
 faker = faker.Faker(["en_CA"])
 warnings.filterwarnings("ignore")
@@ -402,6 +402,12 @@ def generate_diagnosis_date(row):
         return (diagnosis_date - date_of_birth).days
     else:
         return (today - date_of_birth).days
+    
+
+categorical_cols = ['education','gender','race','social_class','physical_activity']
+    
+for col in categorical_cols:
+    patient_df[col] = pd.factorize(patient_df[col])[0]
 
 # Apply the function to generate 'time_to_event'
 patient_df['time_to_event'] = patient_df.apply(generate_diagnosis_date, axis=1)
@@ -411,12 +417,6 @@ df_cox = patient_df.drop(columns=['name', 'dob', 'label','geographic_location'])
 df_cox.head()
 
 # Kaplan-Meier Analysis
-kmf = KaplanMeierFitter()
-
-# Alzheimer's group
-kmf.fit(durations=df_cox['time_to_event'][df_cox['event'] == 1], event_observed=df_cox['event'][df_cox['event'] == 1], label='Alzheimer\'s')
-
-# Non-Alzheimer's group
-kmf.fit(durations=df_cox['time_to_event'][df_cox['event'] == 0], event_observed=df_cox['event'][df_cox['event'] == 0], label='Not Alzheimer\'s')
-
-pickle.dump(kmf, open("model.pkl", "wb"))
+cph = CoxPHFitter()
+cph.fit(df_cox, duration_col='time_to_event', event_col='event')
+pickle.dump(cph, open("model.pkl", "wb"))
