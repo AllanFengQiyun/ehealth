@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-from pandas import DataFrame
+from pandas import DataFrame,Index
+from datetime import datetime
+import lifelines
 import pickle
 
 app = FastAPI()
@@ -55,9 +57,15 @@ async def try_model():
             "cancer": [0],
         }
     )
-    with pickle.load(open("model.pkl", "rb")) as model:
-        result = model.predict_cumulative_hazard(new_data)
-        return {"test": result}
+    dob = datetime(1937, 3, 2)
+    age_in_days = (datetime.today() - dob).days
+    model = pickle.load(open("model.pkl", "rb"))
+    result = model.predict_survival_function(new_data)
+    result.index = result.index.astype(int)
+    new_index = Index(range(result.index.min(), result.index.max() + 1))
+    result = result.reindex(index=new_index,method="backfill")
+    chance_of_alz = result[0][age_in_days]
+    return {"test": chance_of_alz, "age_in_days": age_in_days}
 
 
 if __name__ == "__main__":
