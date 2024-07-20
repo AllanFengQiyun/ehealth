@@ -15,7 +15,7 @@ export default function ControlledComponent() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(formData);
+    await fetch('')
   }
 
   return (
