@@ -2,7 +2,7 @@
 import datetime as dt
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-import faker 
+import faker
 import numpy as np
 from typing import List
 from datetime import datetime
@@ -12,6 +12,7 @@ import pickle
 import matplotlib as plt
 import seaborn as sns
 from lifelines import KaplanMeierFitter, CoxPHFitter
+import math
 
 faker = faker.Faker(["en_CA"])
 warnings.filterwarnings("ignore")
@@ -272,9 +273,13 @@ def labeling_patients(df: pd.DataFrame) -> bool:
             return 3.3
         elif age >= 85:
             base_chance = 8.4
-            exponent_factor = 1.5  # Adjust this factor for desired exponential growth
-            additional_chance = (age - 85) * exponent_factor
-            return min(base_chance + additional_chance, 50.0)
+            max_chance = 50.0
+            years_over_85 = age - 85
+            # Logarithmic growth from 8.4% towards 50%
+            chance = base_chance + (max_chance - base_chance) * (
+                1 - math.exp(-0.1 * years_over_85)
+            )
+            return min(chance, 50.0)
         return 0
 
     light_inc_like = [
@@ -353,33 +358,51 @@ def labeling_patients(df: pd.DataFrame) -> bool:
 
     return faker.boolean(chance_of_getting_true=percentage_chance * factors)
 
-patient_df['label'] = patient_df.apply(labeling_patients,axis=1)
-patient_df['dob'] = pd.to_datetime(patient_df['dob'])
+
+patient_df["label"] = patient_df.apply(labeling_patients, axis=1)
+patient_df["dob"] = pd.to_datetime(patient_df["dob"])
 today = datetime.today()
 
 light_inc_like = [
-    "poor_diet", "viruses", "smoking", "micro_infarcts", "depression",
-    "early_stress", "air_pollution", "calcium_deficiency", "alcohol",
-    "organic_solvents", "vitamin_deficiency", "dental_infection",
-    "fungi_infection", "bacteria_infection"
+    "poor_diet",
+    "viruses",
+    "smoking",
+    "micro_infarcts",
+    "depression",
+    "early_stress",
+    "air_pollution",
+    "calcium_deficiency",
+    "alcohol",
+    "organic_solvents",
+    "vitamin_deficiency",
+    "dental_infection",
+    "fungi_infection",
+    "bacteria_infection",
 ]
 
 moderate_inc_like = [
-    "lack_of_cognitive_activity", "poor_cholesterol_homeostasis",
-    "cardiovascular_disease", "congestive_heart_failure", "metals",
-    "malnutrition", "immune_system_dysfunction"
+    "lack_of_cognitive_activity",
+    "poor_cholesterol_homeostasis",
+    "cardiovascular_disease",
+    "congestive_heart_failure",
+    "metals",
+    "malnutrition",
+    "immune_system_dysfunction",
 ]
 
 strong_inc_like = [
-    "obesity", "poor_controlled_type2_diabetes", "stroke",
-    "family_history_of_dementia", "traumatic_brain_injury"
+    "obesity",
+    "poor_controlled_type2_diabetes",
+    "stroke",
+    "family_history_of_dementia",
+    "traumatic_brain_injury",
 ]
-patient_df['event'] = patient_df['label'].astype(int)
+patient_df["event"] = patient_df["label"].astype(int)
 
 
 def generate_diagnosis_date(row):
-    date_of_birth = row['dob']
-    if row['event'] == 1:
+    date_of_birth = row["dob"]
+    if row["event"] == 1:
         # Calculate the date range for diagnosis
         max_diagnosis_date = today
 
@@ -397,26 +420,29 @@ def generate_diagnosis_date(row):
         # Reduce max diagnosis date by a factor of the health score
         max_diagnosis_date -= timedelta(days=health_score * 365)
 
-        diagnosis_date = faker.date_between_dates(date_start = max_diagnosis_date-timedelta(days=365*3.5), date_end=max_diagnosis_date)
+        diagnosis_date = faker.date_between_dates(
+            date_start=max_diagnosis_date - timedelta(days=365 * 3.5),
+            date_end=max_diagnosis_date,
+        )
         diagnosis_date = pd.to_datetime(diagnosis_date)
         return (diagnosis_date - date_of_birth).days
     else:
         return (today - date_of_birth).days
-    
 
-categorical_cols = ['education','gender','race','social_class','physical_activity']
-    
+
+categorical_cols = ["education", "gender", "race", "social_class", "physical_activity"]
+
 for col in categorical_cols:
     patient_df[col] = pd.factorize(patient_df[col])[0]
 
 # Apply the function to generate 'time_to_event'
-patient_df['time_to_event'] = patient_df.apply(generate_diagnosis_date, axis=1)
+patient_df["time_to_event"] = patient_df.apply(generate_diagnosis_date, axis=1)
 
-df_cox = patient_df.drop(columns=['name', 'dob', 'label','geographic_location'])
+df_cox = patient_df.drop(columns=["name", "dob", "label", "geographic_location"])
 
 df_cox.head()
 
 # Kaplan-Meier Analysis
 cph = CoxPHFitter()
-cph.fit(df_cox, duration_col='time_to_event', event_col='event')
+cph.fit(df_cox, duration_col="time_to_event", event_col="event")
 pickle.dump(cph, open("model.pkl", "wb"))
