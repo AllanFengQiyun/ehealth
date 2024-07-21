@@ -2,6 +2,7 @@
   "name": "ehealth",
   "private": true,
   "version": "0.0.0",
+  "proxy": "https://ehealth-facb87f2634e.herokuapp.com",
   "type": "module",
   "scripts": {
     "dev": "vite",
