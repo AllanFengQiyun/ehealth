@@ -273,13 +273,10 @@ def labeling_patients(df: pd.DataFrame) -> bool:
             return 3.3
         elif age >= 85:
             base_chance = 8.4
-            max_chance = 50.0
             years_over_85 = age - 85
-            # Logarithmic growth from 8.4% towards 50%
-            chance = base_chance + (max_chance - base_chance) * (
-                1 - math.exp(-0.1 * years_over_85)
-            )
-            return min(chance, 50.0)
+            # Logarithmic growth from 8.4% without a cap
+            chance = base_chance + 30 * (1 - math.exp(-0.05 * years_over_85))
+            return chance
         return 0
 
     light_inc_like = [
