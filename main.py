@@ -1,4 +1,3 @@
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
@@ -11,8 +10,8 @@ app = FastAPI()
 # CORS configuration
 origins = [
     "http://localhost:3000",  # React development server
-    "https://ehealth-facb87f2634e.herokuapp.com/",  # Your frontend Heroku app
-    "https://ehealth-frontend-9a7623e8b7a7.herokuapp.com/",
+    "https://ehealth-facb87f2634e.herokuapp.com",  # Your frontend Heroku app
+    "https://ehealth-frontend-9a7623e8b7a7.herokuapp.com",
 ]
 
 app.add_middleware(
